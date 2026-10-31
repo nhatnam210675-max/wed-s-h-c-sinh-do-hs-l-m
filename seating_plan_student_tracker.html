@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sơ Đồ Lớp Học Pro - macOS & iPad Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        themeBg: 'var(--bg-main)',
+                        themeCard: 'var(--bg-card)',
+                        themeBorder: 'var(--border-color)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-main: #f1f5f9;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --border-color: #e2e8f0;
+            --grid-color: rgba(148, 163, 184, 0.25);
+        }
+
+        body.theme-emerald {
+            --bg-main: #f0fdf4;
+            --bg-card: rgba(255, 255, 255, 0.92);
+            --border-color: #bbf7d0;
+            --grid-color: rgba(74, 222, 128, 0.2);
+        }
+
+        body.theme-purple {
+            --bg-main: #faf5ff;
+            --bg-card: rgba(255, 255, 255, 0.92);
+            --border-color: #e9d5ff;
+            --grid-color: rgba(192, 132, 252, 0.2);
+        }
+
+        body.dark {
+            --bg-main: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --border-color: #334155;
+            --grid-color: rgba(100, 116, 139, 0.25);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: var(--bg-main);
+        }
+
+        .glass-panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-color: var(--border-color);
+        }
+
+        .bg-grid-pattern {
+            background-size: 28px 28px;
+            background-image: radial-gradient(circle, var(--grid-color) 1.5px, transparent 1.5px);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 9999px; }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -40px) scale(1.3); }
+        }
+
+        .score-anim {
+            position: absolute;
+            animation: floatUpFade 0.8s ease-out forwards;
+            pointer-events: none;
+            font-weight: 800;
+            z-index: 100;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .dragging-desk {
+            opacity: 0.85;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25) !important;
+            cursor: grabbing !important;
+        }
+
+        .seat-drag-over {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            transform: scale(1.02);
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-area { 
+                position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+                background: white !important; overflow: visible !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300">
+
+    <!-- TOP NAVBAR -->
+    <header class="h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 flex items-center justify-between z-30 shrink-0 no-print">
+        
+        <!-- Left Title & Class Name -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <input type="text" id="classNameInput" onchange="updateClassName(this.value)"
+                       class="text-base font-bold bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-blue-600 focus:outline-none px-1 text-slate-800 dark:text-slate-100 transition-colors w-36 sm:w-52" 
+                       placeholder="Nhập tên lớp...">
+                <div class="text-[11px] text-slate-400 font-medium px-1">Sơ Đồ Lớp iPad & Mac Pro</div>
+            </div>
+        </div>
+
+        <!-- Center Quick Actions -->
+        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/60 dark:border-slate-700">
+            <button onclick="addDesk('single')" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="square" class="w-3.5 h-3.5 text-blue-500"></i> Bàn Đơn
+            </button>
+            <button onclick="addDesk('double')" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="columns-2" class="w-3.5 h-3.5 text-indigo-500"></i> Bàn Đôi
+            </button>
+            <button onclick="addDesk('group4')" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="grid-2x2" class="w-3.5 h-3.5 text-emerald-500"></i> Bàn 4
+            </button>
+            <button onclick="addDesk('group6')" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="grid-3x2" class="w-3.5 h-3.5 text-purple-500"></i> Bàn 6
+            </button>
+            <button onclick="addTeacherDesk()" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-all flex items-center gap-1">
+                <i data-lucide="presentation" class="w-3.5 h-3.5 text-amber-500"></i> Bàn GV
+            </button>
+        </div>
+
+        <!-- Right Controls & Theme Selector -->
+        <div class="flex items-center gap-2">
+            <!-- Theme Dropdown -->
+            <div class="relative">
+                <select id="themeSelect" onchange="changeTheme(this.value)" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 py-1.5 px-2.5 rounded-xl focus:outline-none font-semibold cursor-pointer">
+                    <option value="default">🎨 Theme macOS</option>
+                    <option value="emerald">🌿 Xanh Tươi Mới</option>
+                    <option value="purple">💜 Tím Sang Trọng</option>
+                    <option value="dark">🌙 Dark Mode</option>
+                </select>
+            </div>
+
+            <!-- Random Seating Dropdown Button -->
+            <div class="relative group">
+                <button class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="shuffle" class="w-3.5 h-3.5"></i> Xếp Ngẫu Nhiên
+                </button>
+                <div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-1.5 hidden group-hover:block z-50">
+                    <button onclick="randomizeSeats('normal')" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">
+                        <i data-lucide="dices" class="w-3.5 h-3.5 text-amber-500"></i> Ngẫu nhiên hoàn toàn
+                    </button>
+                    <button onclick="randomizeSeats('gender_alternate')" class="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg flex items-center gap-2">
+                        <i data-lucide="users" class="w-3.5 h-3.5 text-indigo-500"></i> Đan xen Nam - Nữ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report & Leaderboard -->
+            <button onclick="openReportModal()" title="Báo cáo thi đua" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <i data-lucide="award" class="w-4 h-4 text-amber-500"></i>
+            </button>
+
+            <div class="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5"></div>
+
+            <button onclick="window.print()" title="In sơ đồ" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+            </button>
+            <button onclick="exportData()" title="Xuất file lưu" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i>
+            </button>
+            <button onclick="resetAllData()" title="Đặt lại" class="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN HORIZONTAL SPLIT VIEW -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- LEFT SIDEBAR: STUDENT LIST -->
+        <aside class="w-80 md:w-88 lg:w-96 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col z-20 shrink-0 no-print">
+            
+            <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-blue-600"></i>
+                        <h2 class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">Học Sinh</h2>
+                        <span id="studentTotalBadge" class="px-2 py-0.5 text-xs font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-full">0</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-medium">Chưa xếp: <b id="unassignedBadge" class="text-amber-600">0</b></div>
+                </div>
+
+                <!-- Search -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5"></i>
+                    <input type="text" id="searchInput" oninput="renderStudentList()" placeholder="Tìm tên học sinh..." 
+                           class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500 rounded-xl focus:outline-none transition-all">
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    <button id="tabSingleBtn" onclick="switchAddTab('single')" class="flex-1 py-1 rounded-md bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400">Thêm Từng Em</button>
+                    <button id="tabBulkBtn" onclick="switchAddTab('bulk')" class="flex-1 py-1 rounded-md text-slate-500 dark:text-slate-400">Dán Danh Sách</button>
+                </div>
+
+                <!-- Single Add Input -->
+                <div id="addSingleForm" class="flex gap-1.5">
+                    <input type="text" id="singleNameInput" placeholder="Nhập họ và tên..." onkeypress="if(event.key==='Enter') addSingleStudent()" 
+                           class="flex-1 px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    
+                    <select id="singleGenderInput" class="px-2 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:outline-none font-semibold">
+                        <option value="M">Nam</option>
+                        <option value="F">Nữ</option>
+                    </select>
+
+                    <button onclick="addSingleStudent()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors">
+                        Thêm
+                    </button>
+                </div>
+
+                <!-- Bulk Add Textarea -->
+                <div id="addBulkForm" class="hidden flex-col gap-1.5">
+                    <textarea id="bulkNameInput" rows="3" placeholder="Dán danh sách (Cú pháp: Tên - Nam/Nữ hoặc Tên)..." 
+                              class="w-full px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                    <button onclick="addBulkStudents()" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors">
+                        Lưu Danh Sách
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student List -->
+            <div id="studentListContainer" class="flex-1 overflow-y-auto p-3 space-y-1.5"></div>
+
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
+                <span>💡 Kéo tên thả vào bàn trên sơ đồ</span>
+                <button onclick="clearAllAssignments()" class="text-rose-500 hover:underline font-medium">Bỏ xếp tất cả</button>
+            </div>
+        </aside>
+
+        <!-- RIGHT CANVAS -->
+        <main class="flex-1 bg-grid-pattern relative overflow-auto p-6 flex flex-col items-center min-w-[700px] print-area" id="canvasContainer">
+            
+            <!-- Floating Quick Add Toolbar -->
+            <div class="mb-4 no-print glass-panel border border-slate-200/80 dark:border-slate-700 shadow-lg rounded-2xl p-2 flex items-center gap-2 z-20 transition-all">
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 flex items-center gap-1">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Fast-Add Bàn:
+                </span>
+                <button onclick="addDesk('single')" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                    + Bàn Đơn (1 chỗ)
+                </button>
+                <button onclick="addDesk('double')" class="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                    + Bàn Đôi (2 chỗ)
+                </button>
+                <button onclick="addDesk('group4')" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                    + Bàn 4 Chỗ
+                </button>
+                <button onclick="addDesk('group6')" class="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                    + Bàn 6 Chỗ
+                </button>
+                <button onclick="addTeacherDesk()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5">
+                    + Bàn Giáo Viên
+                </button>
+            </div>
+
+            <!-- Blackboard Header -->
+            <div class="w-full max-w-3xl bg-slate-800 text-slate-200 py-2.5 px-6 rounded-2xl shadow-sm text-center font-bold text-xs uppercase tracking-widest border border-slate-700 mb-6 flex justify-between items-center shrink-0">
+                <span class="text-slate-400 font-medium">CỬA LỚP</span>
+                <span id="boardClassTitle">BẢNG ĐEN / MÀN CHIẾU - LỚP HỌC</span>
+                <span class="text-slate-400 font-medium">CỬA SỔ</span>
+            </div>
+
+            <!-- Canvas Grid Workspace -->
+            <div id="classroomCanvas" class="w-full flex-1 relative min-h-[600px]"></div>
+        </main>
+    </div>
+
+    <!-- MODAL: EDIT DESK -->
+    <div id="deskModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 w-80 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-3 flex items-center gap-2">
+                <i data-lucide="settings" class="w-4 h-4 text-blue-600"></i> Tùy Chỉnh Bàn Học
+            </h3>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Tên/Số hiệu bàn</label>
+                    <input type="text" id="modalDeskLabel" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Số chỗ ngồi</label>
+                        <input type="number" id="modalDeskSeats" min="1" max="12" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Số cột ghế</label>
+                        <input type="number" id="modalDeskCols" min="1" max="6" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-300 mb-1">Góc xoay (Độ)</label>
+                    <select id="modalDeskRotation" class="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 dark:bg-slate-900 rounded-xl focus:outline-none">
+                        <option value="0">0° (Ngang)</option>
+                        <option value="90">90° (Dọc)</option>
+                        <option value="180">180° (Xoay ngược)</option>
+                        <option value="270">270° (Dọc ngược)</option>
+                    </select>
+                </div>
+
+                <div class="pt-3 flex justify-between items-center border-t border-slate-100 dark:border-slate-700 mt-4">
+                    <button onclick="deleteCurrentDesk()" class="px-3 py-1.5 bg-rose-50 dark:bg-rose-950/50 text-rose-600 rounded-xl font-semibold flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Xóa
+                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="closeDeskModal()" class="px-3.5 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-semibold">Hủy</button>
+                        <button onclick="saveDeskModal()" class="px-3.5 py-1.5 bg-blue-600 text-white rounded-xl font-semibold">Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REPORT & LEADERBOARD -->
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="award" class="w-5 h-5 text-amber-500"></i>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-slate-100">Bảng Xếp Hạng Thi Đua Lớp</h3>
+                </div>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="reportList" class="flex-1 overflow-y-auto py-3 space-y-2 pr-1"></div>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button onclick="closeReportModal()" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        let appState = {
+            className: "Lớp 10A1",
+            theme: "default",
+            students: [], // { id, name, gender: 'M'|'F', score }
+            desks: []     // { id, label, seatsCount, cols, rotation, x, y, isTeacher, seats: [studentId|null] }
+        };
+
+        let activeDeskId = null;
+        let draggedStudentId = null;
+        let pointerDragState = { isDragging: false, deskId: null, startX: 0, startY: 0, initialDeskX: 0, initialDeskY: 0 };
+
+        window.onload = function() {
+            loadLocalStorage();
+            applyTheme();
+            renderAll();
+            setupPointerListeners();
+            lucide.createIcons();
+        };
+
+        function renderAll() {
+            renderHeader();
+            renderStudentList();
+            renderCanvas();
+        }
+
+        function renderHeader() {
+            document.getElementById('classNameInput').value = appState.className;
+            document.getElementById('boardClassTitle').innerText = `BẢNG ĐEN / MÀN CHIẾU - ${appState.className.toUpperCase() || 'LỚP HỌC'}`;
+            document.getElementById('themeSelect').value = appState.theme || 'default';
+        }
+
+        function applyTheme() {
+            document.body.className = "text-slate-800 dark:text-slate-100 h-screen w-screen overflow-hidden flex flex-col transition-colors duration-300";
+            if (appState.theme === 'emerald') document.body.classList.add('theme-emerald');
+            else if (appState.theme === 'purple') document.body.classList.add('theme-purple');
+            else if (appState.theme === 'dark') document.body.classList.add('dark');
+        }
+
+        function changeTheme(themeName) {
+            appState.theme = themeName;
+            applyTheme();
+            saveLocalStorage();
+        }
+
+        function renderStudentList() {
+            const container = document.getElementById('studentListContainer');
+            const searchKeyword = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+            container.innerHTML = '';
+
+            const assignedIds = new Set();
+            appState.desks.forEach(d => { d.seats.forEach(sId => { if (sId) assignedIds.add(sId); }); });
+
+            document.getElementById('studentTotalBadge').innerText = appState.students.length;
+            const unassignedCount = appState.students.filter(s => !assignedIds.has(s.id)).length;
+            document.getElementById('unassignedBadge').innerText = unassignedCount;
+
+            const filteredStudents = appState.students.filter(s => s.name.toLowerCase().includes(searchKeyword));
+
+            if (filteredStudents.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-slate-400 italic">Không tìm thấy học sinh nào</div>`;
+                return;
+            }
+
+            filteredStudents.forEach(student => {
+                const isAssigned = assignedIds.has(student.id);
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-2xl border transition-all flex items-center justify-between cursor-grab select-none group ${
+                    isAssigned ? 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-800 opacity-60' : 'bg-white dark:bg-slate-800 border-slate-200/90 dark:border-slate-700 hover:border-blue-300 hover:shadow-md'
+                }`;
+
+                card.draggable = true;
+                card.ondragstart = (e) => {
+                    draggedStudentId = student.id;
+                    e.dataTransfer.setData('text/plain', student.id);
+                };
+
+                const genderBadge = student.gender === 'F' 
+                    ? `<span class="px-1.5 py-0.2 text-[10px] font-bold bg-pink-100 text-pink-600 dark:bg-pink-950/60 dark:text-pink-300 rounded-md">Nữ</span>`
+                    : `<span class="px-1.5 py-0.2 text-[10px] font-bold bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-300 rounded-md">Nam</span>`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <div class="w-2 h-2 rounded-full shrink-0 ${isAssigned ? 'bg-slate-300' : 'bg-emerald-500'}"></div>
+                        <span class="text-xs font-semibold truncate">${escapeHtml(student.name)}</span>
+                        ${genderBadge}
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-lg ${
+                            student.score > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 
+                            student.score < 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                        }">${student.score > 0 ? '+' : ''}${student.score}</span>
+
+                        <div class="flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                            <button onclick="changeScore('${student.id}', -1, event)" class="w-5 h-5 bg-slate-100 dark:bg-slate-700 hover:bg-rose-100 hover:text-rose-600 rounded font-bold text-xs flex items-center justify-center">-</button>
+                            <button onclick="changeScore('${student.id}', 1, event)" class="w-5 h-5 bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100 hover:text-emerald-600 rounded font-bold text-xs flex items-center justify-center">+</button>
+                            <button onclick="deleteStudent('${student.id}')" class="p-1 text-slate-300 hover:text-rose-500 rounded">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderCanvas() {
+            const canvas = document.getElementById('classroomCanvas');
+            canvas.innerHTML = '';
+
+            appState.desks.forEach(desk => {
+                const deskWrapper = document.createElement('div');
+                deskWrapper.className = `absolute select-none group transition-shadow ${desk.isTeacher ? 'z-0' : 'z-10'}`;
+                deskWrapper.style.left = `${desk.x}px`;
+                deskWrapper.style.top = `${desk.y}px`;
+                deskWrapper.style.transform = `rotate(${desk.rotation || 0}deg)`;
+
+                if (desk.isTeacher) {
+                    deskWrapper.innerHTML = `
+                        <div class="w-56 bg-amber-800/90 text-amber-100 rounded-2xl p-3 shadow-lg border-2 border-amber-900 flex items-center justify-between cursor-move desk-header" data-desk-id="${desk.id}">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="presentation" class="w-4 h-4"></i>
+                                <span class="text-xs font-bold uppercase tracking-wider">Bàn Giáo Viên</span>
+                            </div>
+                            <button onclick="deleteDesk('${desk.id}')" class="text-amber-300/70 hover:text-rose-300 no-print">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    `;
+                    canvas.appendChild(deskWrapper);
+                    return;
+                }
+
+                const deskCard = document.createElement('div');
+                deskCard.className = 'bg-white/95 dark:bg-slate-800/95 rounded-2xl shadow-md border-2 border-slate-200/90 dark:border-slate-700 p-3 flex flex-col gap-2';
+                
+                const header = document.createElement('div');
+                header.className = 'flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-700 cursor-move desk-header';
+                header.setAttribute('data-desk-id', desk.id);
+                header.innerHTML = `
+                    <div class="flex items-center gap-1.5 pointer-events-none">
+                        <i data-lucide="grip-horizontal" class="w-3.5 h-3.5 text-slate-400"></i>
+                        <span class="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">${escapeHtml(desk.label)}</span>
+                    </div>
+                    <button onclick="openDeskModal('${desk.id}')" class="text-slate-400 hover:text-blue-600 p-0.5 rounded-md no-print">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                    </button>
+                `;
+                deskCard.appendChild(header);
+
+                const seatsGrid = document.createElement('div');
+                seatsGrid.className = 'grid gap-2';
+                seatsGrid.style.gridTemplateColumns = `repeat(${desk.cols || 2}, minmax(105px, 1fr))`;
+
+                for (let i = 0; i < desk.seatsCount; i++) {
+                    const studentId = desk.seats[i];
+                    const student = appState.students.find(s => s.id === studentId);
+
+                    const seatBox = document.createElement('div');
+                    seatBox.className = `min-h-[72px] rounded-xl p-2 border border-dashed relative flex flex-col justify-between transition-all ${
+                        student ? 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200/90 dark:border-blue-800 shadow-xs' : 'bg-slate-50/80 dark:bg-slate-900/50 border-slate-200/80 dark:border-slate-700 hover:border-blue-400'
+                    }`;
+
+                    seatBox.ondragover = (e) => { e.preventDefault(); seatBox.classList.add('seat-drag-over'); };
+                    seatBox.ondragleave = () => seatBox.classList.remove('seat-drag-over');
+                    seatBox.ondrop = (e) => { seatBox.classList.remove('seat-drag-over'); handleSeatDrop(e, desk.id, i); };
+
+                    if (student) {
+                        const genderTag = student.gender === 'F' ? '<span class="text-[9px] font-bold text-pink-500">Nữ</span>' : '<span class="text-[9px] font-bold text-blue-500">Nam</span>';
+                        seatBox.innerHTML = `
+                            <div class="flex items-start justify-between gap-1">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold leading-tight line-clamp-2">${escapeHtml(student.name)}</span>
+                                    ${genderTag}
+                                </div>
+                                <button onclick="unassignSeat('${desk.id}', ${i})" class="text-slate-300 hover:text-rose-500 no-print">
+                                    <i data-lucide="x" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center justify-between mt-2 pt-1 border-t border-blue-100 dark:border-blue-900/50">
+                                <span class="text-[10px] font-extrabold px-1.5 rounded-md ${
+                                    student.score > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300' : 
+                                    student.score < 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300' : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                }">${student.score > 0 ? '+' : ''}${student.score} pt</span>
+
+                                <div class="flex items-center gap-0.5 no-print">
+                                    <button onclick="changeScore('${student.id}', -1, event)" class="w-4 h-4 bg-white dark:bg-slate-700 hover:bg-rose-100 text-rose-600 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-[10px]">-</button>
+                                    <button onclick="changeScore('${student.id}', 1, event)" class="w-4 h-4 bg-white dark:bg-slate-700 hover:bg-emerald-100 text-emerald-600 rounded border border-slate-200 dark:border-slate-600 flex items-center justify-center font-bold text-[10px]">+</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        seatBox.innerHTML = `
+                            <div class="h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 py-1">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5 mb-0.5"></i>
+                                <span class="text-[10px] font-medium">Ghế trống</span>
+                            </div>
+                        `;
+                    }
+
+                    seatsGrid.appendChild(seatBox);
+                }
+
+                deskCard.appendChild(seatsGrid);
+                deskWrapper.appendChild(deskCard);
+                canvas.appendChild(deskWrapper);
+            });
+
+            lucide.createIcons();
+        }
+
+        function setupPointerListeners() {
+            const canvas = document.getElementById('classroomCanvas');
+
+            canvas.addEventListener('pointerdown', (e) => {
+                const header = e.target.closest('.desk-header');
+                if (!header) return;
+
+                const deskId = header.getAttribute('data-desk-id');
+                const desk = appState.desks.find(d => d.id === deskId);
+                if (!desk) return;
+
+                pointerDragState.isDragging = true;
+                pointerDragState.deskId = deskId;
+                pointerDragState.startX = e.clientX;
+                pointerDragState.startY = e.clientY;
+                pointerDragState.initialDeskX = desk.x;
+                pointerDragState.initialDeskY = desk.y;
+
+                header.closest('.absolute').classList.add('dragging-desk');
+                e.preventDefault();
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!pointerDragState.isDragging) return;
+
+                const dx = e.clientX - pointerDragState.startX;
+                const dy = e.clientY - pointerDragState.startY;
+
+                const desk = appState.desks.find(d => d.id === pointerDragState.deskId);
+                if (desk) {
+                    desk.x = Math.max(0, pointerDragState.initialDeskX + dx);
+                    desk.y = Math.max(0, pointerDragState.initialDeskY + dy);
+                    renderCanvas();
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                if (pointerDragState.isDragging) {
+                    pointerDragState.isDragging = false;
+                    pointerDragState.deskId = null;
+                    saveLocalStorage();
+                    renderCanvas();
+                }
+            });
+        }
+
+        function changeScore(studentId, delta, event) {
+            if (event) event.stopPropagation();
+
+            const student = appState.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            student.score += delta;
+
+            if (event && event.clientX) {
+                showFloatingScore(event.clientX, event.clientY, delta);
+            }
+
+            saveAndRender();
+        }
+
+        function showFloatingScore(x, y, delta) {
+            const elem = document.createElement('div');
+            elem.className = `score-anim ${delta > 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+            elem.innerText = delta > 0 ? `+${delta}` : `${delta}`;
+            elem.style.left = `${x}px`;
+            elem.style.top = `${y}px`;
+
+            document.body.appendChild(elem);
+            setTimeout(() => elem.remove(), 800);
+        }
+
+        function switchAddTab(tab) {
+            const singleForm = document.getElementById('addSingleForm');
+            const bulkForm = document.getElementById('addBulkForm');
+            const singleBtn = document.getElementById('tabSingleBtn');
+            const bulkBtn = document.getElementById('tabBulkBtn');
+
+            if (tab === 'single') {
+                singleForm.classList.remove('hidden');
+                bulkForm.classList.add('hidden');
+                singleBtn.className = 'flex-1 py-1 rounded-md bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-bold';
+                bulkBtn.className = 'flex-1 py-1 rounded-md text-slate-500 dark:text-slate-400 font-semibold';
+            } else {
+                singleForm.classList.add('hidden');
+                bulkForm.classList.remove('hidden');
+                singleBtn.className = 'flex-1 py-1 rounded-md text-slate-500 dark:text-slate-400 font-semibold';
+                bulkBtn.className = 'flex-1 py-1 rounded-md bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-bold';
+            }
+        }
+
+        function addSingleStudent() {
+            const input = document.getElementById('singleNameInput');
+            const genderSelect = document.getElementById('singleGenderInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            appState.students.push({
+                id: 'st_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                name: name,
+                gender: genderSelect.value || 'M',
+                score: 0
+            });
+
+            input.value = '';
+            saveAndRender();
+        }
+
+        function addBulkStudents() {
+            const textarea = document.getElementById('bulkNameInput');
+            const lines = textarea.value.split('\n');
+            let added = false;
+
+            lines.forEach(line => {
+                const parts = line.split('-').map(s => s.trim());
+                const name = parts[0];
+                if (name) {
+                    let gender = 'M';
+                    if (parts[1] && (parts[1].toLowerCase().includes('nữ') || parts[1].toLowerCase() === 'f')) {
+                        gender = 'F';
+                    }
+                    appState.students.push({
+                        id: 'st_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        name: name,
+                        gender: gender,
+                        score: 0
+                    });
+                    added = true;
+                }
+            });
+
+            if (added) {
+                textarea.value = '';
+                saveAndRender();
+            }
+        }
+
+        function deleteStudent(studentId) {
+            appState.desks.forEach(desk => {
+                desk.seats = desk.seats.map(s => s === studentId ? null : s);
+            });
+            appState.students = appState.students.filter(s => s.id !== studentId);
+            saveAndRender();
+        }
+
+        function addDesk(type) {
+            const deskCount = appState.desks.filter(d => !d.isTeacher).length + 1;
+            let seatsCount = 2, cols = 2;
+
+            if (type === 'single') { seatsCount = 1; cols = 1; }
+            if (type === 'double') { seatsCount = 2; cols = 2; }
+            if (type === 'group4') { seatsCount = 4; cols = 2; }
+            if (type === 'group6') { seatsCount = 6; cols = 3; }
+
+            const offset = (deskCount % 8) * 25;
+            appState.desks.push({
+                id: 'desk_' + Date.now(),
+                label: `Bàn ${deskCount}`,
+                seatsCount: seatsCount,
+                cols: cols,
+                rotation: 0,
+                x: 40 + offset,
+                y: 40 + offset,
+                isTeacher: false,
+                seats: Array(seatsCount).fill(null)
+            });
+
+            saveAndRender();
+        }
+
+        function addTeacherDesk() {
+            if (appState.desks.some(d => d.isTeacher)) {
+                alert("Lớp học đã có bàn giáo viên!");
+                return;
+            }
+
+            appState.desks.push({
+                id: 'teacher_desk',
+                label: 'Bàn Giáo Viên',
+                seatsCount: 0,
+                cols: 1,
+                rotation: 0,
+                x: 250,
+                y: 10,
+                isTeacher: true,
+                seats: []
+            });
+
+            saveAndRender();
+        }
+
+        function openDeskModal(deskId) {
+            activeDeskId = deskId;
+            const desk = appState.desks.find(d => d.id === deskId);
+            if (!desk) return;
+
+            document.getElementById('modalDeskLabel').value = desk.label;
+            document.getElementById('modalDeskSeats').value = desk.seatsCount;
+            document.getElementById('modalDeskCols').value = desk.cols || 2;
+            document.getElementById('modalDeskRotation').value = desk.rotation || 0;
+
+            document.getElementById('deskModal').classList.remove('hidden');
+        }
+
+        function closeDeskModal() {
+            document.getElementById('deskModal').classList.add('hidden');
+            activeDeskId = null;
+        }
+
+        function saveDeskModal() {
+            if (!activeDeskId) return;
+            const desk = appState.desks.find(d => d.id === activeDeskId);
+            if (!desk) return;
+
+            const newSeatsCount = Math.max(1, parseInt(document.getElementById('modalDeskSeats').value) || 1);
+            const newCols = Math.max(1, parseInt(document.getElementById('modalDeskCols').value) || 1);
+            
+            desk.label = document.getElementById('modalDeskLabel').value || desk.label;
+            desk.cols = newCols;
+            desk.rotation = parseInt(document.getElementById('modalDeskRotation').value) || 0;
+
+            if (newSeatsCount !== desk.seatsCount) {
+                if (newSeatsCount > desk.seatsCount) {
+                    for (let i = desk.seatsCount; i < newSeatsCount; i++) desk.seats.push(null);
+                } else {
+                    desk.seats = desk.seats.slice(0, newSeatsCount);
+                }
+                desk.seatsCount = newSeatsCount;
+            }
+
+            closeDeskModal();
+            saveAndRender();
+        }
+
+        function deleteCurrentDesk() {
+            if (!activeDeskId) return;
+            deleteDesk(activeDeskId);
+            closeDeskModal();
+        }
+
+        function deleteDesk(deskId) {
+            appState.desks = appState.desks.filter(d => d.id !== deskId);
+            saveAndRender();
+        }
+
+        function handleSeatDrop(e, deskId, seatIndex) {
+            e.preventDefault();
+            const studentId = e.dataTransfer.getData('text/plain') || draggedStudentId;
+            if (!studentId) return;
+
+            appState.desks.forEach(d => {
+                d.seats = d.seats.map(s => s === studentId ? null : s);
+            });
+
+            const desk = appState.desks.find(d => d.id === deskId);
+            if (desk) {
+                desk.seats[seatIndex] = studentId;
+            }
+
+            draggedStudentId = null;
+            saveAndRender();
+        }
+
+        function unassignSeat(deskId, seatIndex) {
+            const desk = appState.desks.find(d => d.id === deskId);
+            if (desk) {
+                desk.seats[seatIndex] = null;
+                saveAndRender();
+            }
+        }
+
+        function clearAllAssignments() {
+            appState.desks.forEach(desk => {
+                desk.seats = Array(desk.seatsCount).fill(null);
+            });
+            saveAndRender();
+        }
+
+        function randomizeSeats(mode = 'normal') {
+            if (appState.students.length === 0) {
+                alert("Vui lòng thêm danh sách học sinh trước!");
+                return;
+            }
+
+            clearAllAssignments();
+
+            let targetList = [];
+            if (mode === 'gender_alternate') {
+                const males = appState.students.filter(s => s.gender === 'M').sort(() => Math.random() - 0.5);
+                const females = appState.students.filter(s => s.gender === 'F').sort(() => Math.random() - 0.5);
+                const maxLen = Math.max(males.length, females.length);
+                
+                for (let i = 0; i < maxLen; i++) {
+                    if (i < males.length) targetList.push(males[i]);
+                    if (i < females.length) targetList.push(females[i]);
+                }
+            } else {
+                targetList = [...appState.students].sort(() => Math.random() - 0.5);
+            }
+
+            let idx = 0;
+            for (let desk of appState.desks) {
+                if (desk.isTeacher) continue;
+                for (let i = 0; i < desk.seatsCount; i++) {
+                    if (idx < targetList.length) {
+                        desk.seats[i] = targetList[idx].id;
+                        idx++;
+                    }
+                }
+            }
+
+            saveAndRender();
+        }
+
+        function openReportModal() {
+            const container = document.getElementById('reportList');
+            container.innerHTML = '';
+
+            const sorted = [...appState.students].sort((a, b) => b.score - a.score);
+
+            if (sorted.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">Chưa có dữ liệu học sinh</div>`;
+            } else {
+                sorted.forEach((st, rank) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs';
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold ${
+                                rank === 0 ? 'bg-amber-400 text-amber-950' :
+                                rank === 1 ? 'bg-slate-300 text-slate-800' :
+                                rank === 2 ? 'bg-amber-700 text-amber-100' : 'bg-slate-200 dark:bg-slate-800 text-slate-600'
+                            }">${rank + 1}</span>
+                            <span class="font-bold">${escapeHtml(st.name)}</span>
+                            <span class="text-[10px] opacity-60">(${st.gender === 'F' ? 'Nữ' : 'Nam'})</span>
+                        </div>
+                        <span class="font-extrabold px-2.5 py-1 rounded-xl ${
+                            st.score > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                            st.score < 0 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' : 'bg-slate-200 text-slate-600'
+                        }">${st.score > 0 ? '+' : ''}${st.score} điểm</span>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            document.getElementById('reportModal').classList.remove('hidden');
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.add('hidden');
+        }
+
+        function updateClassName(val) {
+            appState.className = val;
+            saveLocalStorage();
+            renderHeader();
+        }
+
+        function saveLocalStorage() {
+            localStorage.setItem('mac_seating_chart_pro_state', JSON.stringify(appState));
+        }
+
+        function loadLocalStorage() {
+            const saved = localStorage.getItem('mac_seating_chart_pro_state');
+            if (saved) {
+                try { appState = JSON.parse(saved); } catch(e) { console.error("Storage error", e); }
+            } else {
+                appState = {
+                    className: "Lớp 10A1",
+                    theme: "default",
+                    students: [
+                        { id: 'st_1', name: 'Nguyễn Văn An', gender: 'M', score: 3 },
+                        { id: 'st_2', name: 'Trần Thị Bích', gender: 'F', score: 5 },
+                        { id: 'st_3', name: 'Lê Hoàng Cường', gender: 'M', score: -1 },
+                        { id: 'st_4', name: 'Phạm Minh Dung', gender: 'F', score: 2 },
+                        { id: 'st_5', name: 'Đỗ Anh Dũng', gender: 'M', score: 0 },
+                        { id: 'st_6', name: 'Vũ Hải Yến', gender: 'F', score: 4 }
+                    ],
+                    desks: [
+                        { id: 'teacher_desk', label: 'Bàn Giáo Viên', seatsCount: 0, cols: 1, rotation: 0, x: 260, y: 10, isTeacher: true, seats: [] },
+                        { id: 'd_1', label: 'Bàn 1', seatsCount: 2, cols: 2, rotation: 0, x: 60, y: 100, isTeacher: false, seats: ['st_1', 'st_2'] },
+                        { id: 'd_2', label: 'Bàn 2', seatsCount: 2, cols: 2, rotation: 0, x: 360, y: 100, isTeacher: false, seats: ['st_3', 'st_4'] },
+                        { id: 'd_3', label: 'Bàn 3', seatsCount: 4, cols: 2, rotation: 0, x: 60, y: 260, isTeacher: false, seats: ['st_5', 'st_6', null, null] }
+                    ]
+                };
+            }
+        }
+
+        function saveAndRender() {
+            saveLocalStorage();
+            renderAll();
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr);
+            a.setAttribute("download", `SoDoLop_${appState.className.replace(/\s+/g, '_')}.json`);
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function resetAllData() {
+            if (confirm("Bạn có chắc muốn xóa toàn bộ sơ đồ và học sinh không?")) {
+                localStorage.removeItem('mac_seating_chart_pro_state');
+                appState = { className: "Lớp 10A1", theme: "default", students: [], desks: [] };
+                applyTheme();
+                saveAndRender();
+            }
+        }
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
